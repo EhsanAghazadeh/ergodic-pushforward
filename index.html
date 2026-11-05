@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ergodic Pushforward Maps</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Ergodic Trajectory Design by Learned Pushforward Maps: Provable Coverage via Conditional Flow Matching (NeurIPS 2026). One learned flow-matching map turns an analytic ergodic latent path into UAV trajectories that provably cover a target demand density.">
+<meta property="og:title" content="Ergodic Trajectory Design by Learned Pushforward Maps">
+<meta property="og:description" content="Provable ergodic coverage via conditional flow matching. NeurIPS 2026.">
+<meta property="og:image" content="static/flow/otcfm.gif">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+:root{
+  --bg:#fbfaf7; --surface:#ffffff; --ink:#1d1d1f; --muted:#5f6368; --line:#e4e1da;
+  --accent:#7a1f2b; --accent-soft:#f4e9ea; --theory:#2f5d8a; --learned:#2e7d5b; --warn:#b5462f;
+  --chip:#f1efe9; --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121214; --surface:#1b1b1e; --ink:#ececec; --muted:#a3a3a8; --line:#2c2c30;
+    --accent:#e08a96; --accent-soft:#2c1d20; --theory:#86b2e0; --learned:#7fcfa8; --warn:#e8937d;
+    --chip:#232327; --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121214; --surface:#1b1b1e; --ink:#ececec; --muted:#a3a3a8; --line:#2c2c30;
+  --accent:#e08a96; --accent-soft:#2c1d20; --theory:#86b2e0; --learned:#7fcfa8; --warn:#e8937d;
+  --chip:#232327; --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.narrow{max-width:760px}
+h1,h2,h3{font-family:"Source Serif 4",Georgia,serif;font-weight:600;line-height:1.2;letter-spacing:-.01em}
+h1{font-size:clamp(1.7rem,4.2vw,2.6rem);margin:0 0 .6rem;text-wrap:balance}
+h2{font-size:1.65rem;margin:0 0 1rem}
+h3{font-size:1.15rem;margin:0 0 .4rem}
+section{padding:56px 0;border-top:1px solid var(--line)}
+p{margin:0 0 1rem}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+
+/* hero */
+header{padding:56px 0 28px;text-align:center}
+.venue{display:inline-block;font-weight:600;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:4px 12px;border-radius:999px;margin-bottom:18px}
+.authors{font-size:1.05rem;margin:.4rem 0 .1rem}
+.authors span{white-space:nowrap;margin:0 .45rem}
+.affil{color:var(--muted);margin:0 0 1.4rem}
+.links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;background:var(--ink);color:var(--bg);text-decoration:none;font-weight:500;font-size:.95rem;border:1px solid var(--ink)}
+.btn:hover{opacity:.88}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn svg{width:17px;height:17px}
+.btn .soon{font-size:.72rem;opacity:.7;font-weight:400}
+
+/* flow player */
+.player{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin-top:32px}
+.stage{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center}
+.pane{text-align:center}
+.pane canvas,.pane img{width:100%;max-width:min(360px,100%);aspect-ratio:1;border-radius:10px;display:block;margin:0 auto;background:#440154}
+.pane .cap{font-size:.85rem;color:var(--muted);margin-top:8px}
+.arrow{font-size:1.6rem;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;margin-top:18px}
+.play{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer;display:grid;place-items:center;flex:none}
+.play svg{width:16px;height:16px}
+.scrub{flex:1 1 200px;min-width:0;display:flex;align-items:center;gap:10px}
+.scrub input{flex:1;accent-color:var(--accent)}
+.sval{font-variant-numeric:tabular-nums;font-size:.9rem;min-width:62px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 14px;font:inherit;font-size:.86rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.player-note{font-size:.85rem;color:var(--muted);margin:14px 0 0}
+.fallback{display:none}
+.noflow .stage,.noflow .controls{display:none}
+.noflow .fallback{display:block}
+.fallback img{width:100%;border-radius:10px}
+
+.tldr{font-family:"Source Serif 4",Georgia,serif;font-size:1.3rem;line-height:1.5;text-align:center;margin:34px auto 0;max-width:780px;text-wrap:balance}
+.tldr b{color:var(--accent);font-weight:600}
+
+/* pipeline */
+.pipe{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:stretch;margin:8px 0 26px}
+.node{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.node h3{color:var(--c)}
+.node p{font-size:.92rem;margin:0;color:var(--muted)}
+.pipe .to{align-self:center;color:var(--muted);font-size:1.4rem}
+.pull{font-family:"Source Serif 4",Georgia,serif;font-size:1.18rem;border-left:3px solid var(--accent);padding:4px 0 4px 16px;margin:24px 0}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow)}
+.card .eq{overflow-x:auto;padding:6px 0}
+.card p{font-size:.93rem;margin:0}
+.tag{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.terms{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.term{border-radius:10px;padding:12px 14px;background:var(--chip);font-size:.9rem}
+.term b{display:block;color:var(--c)}
+
+/* figures */
+figure{margin:0}
+.fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:center}
+.fig img{width:100%;height:auto;display:block}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:8px;text-align:center}
+.stat{font-family:"Source Serif 4",Georgia,serif;font-size:2rem;font-weight:600;color:var(--accent);line-height:1.1}
+.statlab{font-size:.88rem;color:var(--muted)}
+.exp{margin-bottom:44px}
+.exp:last-child{margin-bottom:0}
+.exp-head{display:flex;justify-content:space-between;gap:18px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}
+.exp-head p{margin:0;max-width:560px}
+.kpis{display:flex;gap:26px;flex-wrap:wrap}
+.trio figcaption b{color:var(--ink);display:block}
+
+/* table */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums;min-width:600px}
+th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-weight:600;color:var(--muted);font-size:.8rem}
+thead tr:first-child th{text-align:center}
+tbody tr.ours td{background:var(--accent-soft)}
+tbody tr.sep td{border-top:2px solid var(--line)}
+td.best{font-weight:700;color:var(--accent)}
+td .sd{color:var(--muted);font-size:.78rem}
+.tnote{font-size:.82rem;color:var(--muted);margin-top:10px}
+
+pre{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto;font-size:.84rem;line-height:1.55;margin:0}
+.bibhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.copy{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:.85rem;cursor:pointer}
+footer{padding:36px 0 56px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;text-align:center}
+
+@media (max-width:760px){
+  .stage{grid-template-columns:1fr}
+  .arrow{transform:rotate(90deg);justify-self:center}
+  .pipe{grid-template-columns:1fr}
+  .pipe .to{transform:rotate(90deg);justify-self:center}
+  .grid2,.grid3,.terms{grid-template-columns:1fr}
+  section{padding:44px 0}
+}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="venue">NeurIPS 2026</div>
+  <h1>Ergodic Trajectory Design by Learned Pushforward Maps:<br>Provable Coverage via Conditional Flow Matching</h1>
+  <p class="authors">
+    <span>Ehsan Aghazadeh</span><span>Masoud Malekzadeh</span><span>Ahmad Ghasemi</span><span>Hossein Pishro-Nik</span>
+  </p>
+  <p class="affil">University of Massachusetts Amherst</p>
+  <nav class="links" aria-label="Paper links">
+    <!-- TODO: replace with the arXiv / NeurIPS proceedings URL once available -->
+    <a class="btn" id="paper-link" href="#" aria-disabled="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+      Paper <span class="soon">(coming soon)</span>
+    </a>
+    <a class="btn" href="https://github.com/EhsanAghazadeh/uav_ot_cfm">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.2-3.1-.1-.4-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
+      Code
+    </a>
+    <a class="btn ghost" href="#bibtex">BibTeX</a>
+  </nav>
+
+  <div class="player" id="player">
+    <div class="stage">
+      <div class="pane">
+        <canvas id="flow" width="384" height="384" aria-label="Density of transported particles at flow time s"></canvas>
+        <div class="cap">Learned flow at time <span id="scap">s = 0.00</span></div>
+      </div>
+      <div class="arrow" aria-hidden="true">≈</div>
+      <div class="pane">
+        <img id="target" src="static/flow/target_otcfm.png" width="384" height="384" alt="Milano target demand density">
+        <div class="cap" id="tcap">Target: Milano demand density</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="play" id="playbtn" aria-label="Pause"><svg viewBox="0 0 16 16" fill="currentColor" id="playicon"><rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/></svg></button>
+      <div class="scrub">
+        <input type="range" id="srange" min="0" max="1000" value="0" aria-label="Flow time s">
+        <span class="sval" id="sval">s = 0.00</span>
+      </div>
+      <div class="seg" role="group" aria-label="Model">
+        <button data-model="otcfm" aria-pressed="true">OT-CFM</button>
+        <button data-model="otcfm_nfz" aria-pressed="false">+ no-fly zone</button>
+      </div>
+    </div>
+    <div class="fallback"><img src="static/flow/otcfm.gif" alt="Animation of the learned flow transporting latent occupancy to the Milano target"></div>
+    <p class="player-note">Uniform occupancy on the latent annulus (s = 0) is carried by the learned velocity field onto the Milano demand map (s = 1). With the no-fly penalty, mass flows around the dashed disc. 30,000 latent samples, seed 42.</p>
+  </div>
+
+  <p class="tldr">An analytic path gives <b>ergodicity for free</b>. One map, learned once with flow matching, bends it onto any demand density, for <b>any number of trajectories and agents</b>, with a coverage bound you can read off the training loss.</p>
+</header>
+
+<section>
+  <div class="wrap narrow">
+    <h2>Abstract</h2>
+    <p>Designing continuous trajectories whose time-averaged occupancy provably matches a prescribed spatial density (the <em>ergodic coverage</em> problem) is central to UAV-assisted data collection and sensing, robotic exploration, and mobile monitoring. For flying agents in particular, this challenge is acute: trajectories must balance coverage fidelity against tight energy budgets, no-fly zones, and acceleration limits. Existing methods either re-optimize each trajectory online (with cost growing in the horizon and re-running for every target, agent, and realization) or rely on bespoke analytical constructions that must be re-derived for each new constraint. We propose a <em>pushforward</em> framework that decouples ergodicity from density matching: an analytic latent trajectory provides exact uniform ergodicity on a simple annular domain, and a single map, learned offline by optimal-transport conditional flow matching, transports this latent occupancy onto the prescribed target density. The composed trajectory is then asymptotically ergodic with respect to the learned pushforward distribution, with deviation from the target controlled by the flow-matching training loss. Once trained for a given target density and constraint set, the map serves an unbounded number of trajectories and a multi-agent fleet without per-agent retraining, and many differentiable operational constraints (no-fly zones, acceleration ceilings, or fairness penalties) enter as additive soft penalties in the training loss without re-deriving the design. We prove three results (an acceleration-energy bound, an $O(1/\sqrt{K})$ ergodic convergence rate in the number of trajectory cycles $K$, and an approximation-error bound) that combine into an end-to-end coverage bound estimable from CFM training diagnostics (certified given an architectural Lipschitz bound on $v_\theta$). Experiments on synthetic targets empirically support each theoretical envelope; on a real UAV-coverage dataset, the proposed method gives the strongest observed coverage–energy and coverage–constraint tradeoffs among the evaluated time-warping, optimization, and concurrent flow-matching baselines.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Why learn the map?</h2>
+    <p class="narrow">A UAV serving a city should spend time where demand is high: the fraction of time it spends in any region should match that region's share of the demand. Existing planners pay for this again and again.</p>
+    <div class="grid3">
+      <div class="card"><div class="tag">Spectral / OT / FM control</div><h3>Re-optimize per scenario</h3><p>A new target, trajectory or agent means solving a new optimization problem.</p></div>
+      <div class="card"><div class="tag">Time-warping</div><h3>New math per constraint</h3><p>Fast and provable, but every new constraint needs its own derivation.</p></div>
+      <div class="card"><div class="tag">Reinforcement learning</div><h3>No coverage guarantee</h3><p>Reusable policies, but no long-run guarantee on where time is spent.</p></div>
+    </div>
+    <p class="pull">Can the density transformation be learned once and reused?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Method: an ergodic latent path plus a learned map</h2>
+    <div class="pipe">
+      <div class="node" style="--c:var(--theory)"><h3>Latent path $z(t)$</h3><p>Radial back-and-forth sweeps on the annulus $D_\delta$, one random direction per cycle. Uniform and ergodic by construction.</p></div>
+      <div class="to" aria-hidden="true">→</div>
+      <div class="node" style="--c:var(--learned)"><h3>Learned map $G_\theta$</h3><p>Trained once, offline, with optimal-transport conditional flow matching. Shared by every trajectory and agent.</p></div>
+      <div class="to" aria-hidden="true">→</div>
+      <div class="node" style="--c:var(--accent)"><h3>UAV path $x(t)=G_\theta(z(t))$</h3><p>Follows the target demand. A new trajectory or agent costs one forward pass.</p></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="tag">Analytic part: coverage</div>
+        <div class="eq">$$r(s)=\sqrt{\delta^2+(1-\delta^2)\,s}$$</div>
+        <p>Square-root radial speed sweeps equal area per unit time, so $z(t)$ is uniform on the annulus. Ergodicity then transfers through any map: if $z(t)$ is ergodic for $\pi_0$, then $G(z(t))$ is ergodic for $G_\#\pi_0$.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Learned part: geometry</div>
+        <div class="eq">$$\mathcal L_{\rm total}=\mathcal L_{\rm CFM}+\lambda_{\rm nfz}\mathcal R_{\rm nfz}+\lambda_{E}\mathcal R_{E}+\lambda_{\rm acc}\mathcal R_{\rm acc}$$</div>
+        <p>$\mathcal L_{\rm CFM}=\mathbb E\,\|v_\theta(s,y_s)-(x_1-z_0)\|^2$ with OT-coupled pairs, so the flow paths are nearly straight. A new constraint is one more differentiable loss term; no re-derivation.</p>
+      </div>
+    </div>
+    <p class="pull">The analytic part guarantees coverage; the learned part fits the target geometry.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Guarantees</h2>
+    <div class="grid3">
+      <div class="card"><div class="tag">Theorem 1 · energy</div><div class="eq">$$\sqrt{E_{\rm acc}(x)}\le L\sqrt{E_{\rm acc}(z)}+M_H\sqrt{\Phi_4(z)}$$</div><p>Acceleration energy of the UAV path is the latent energy, stretched by the map, plus the curvature the map adds.</p></div>
+      <div class="card"><div class="tag">Theorem 2 · rate</div><div class="eq">$$\Pr\big(|S_K-\mu_G|>\varepsilon\big)\le 2e^{-K\varepsilon^2/2B^2}$$</div><p>Cycles are i.i.d., so coverage error shrinks as $1/\sqrt K$ with no mixing-time analysis. Measured slope $-0.48$ vs. $-0.50$ predicted.</p></div>
+      <div class="card"><div class="tag">Theorem 3 · approximation</div><div class="eq">$$W_2\big(G_{\theta\#}\pi_0,\,f_{\rm target}\big)\le e^{L_v}\,\varepsilon_v$$</div><p>The map's error is controlled by the velocity error, i.e. the training loss. Better training gives a provably closer coverage distribution.</p></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="tag">End-to-end coverage bound (Corollary 2)</div>
+      <div class="eq">$$\text{coverage error}\;\lesssim\;\frac{C}{\sqrt K}\;+\;\varepsilon_{\rm map}\;+\;\eta_{\rm top}$$</div>
+      <div class="terms">
+        <div class="term" style="--c:var(--theory)"><b>Finite mission</b>Shrinks with more cycles $K$.</div>
+        <div class="term" style="--c:var(--learned)"><b>Learned map</b>Shrinks with better training.</div>
+        <div class="term" style="--c:var(--warn)"><b>Shape mismatch</b>Controlled by the latent geometry ($\delta$).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Synthetic targets: each experiment tests one mechanism</h2>
+
+    <div class="exp">
+      <div class="exp-head">
+        <p><b>Experiment 1 · density matching.</b> A learned map turns uniform latent coverage into a two-mode Gaussian mixture.</p>
+        <div class="kpis"><div><div class="stat">0.92</div><div class="statlab">$\rho_{\rm iid}$, map samples vs. target</div></div><div><div class="stat">0.039</div><div class="statlab">velocity error $\varepsilon_v$</div></div></div>
+      </div>
+      <div class="grid3">
+        <figure><div class="fig"><img src="static/img/exp1_target.png" alt="Gaussian mixture target density" loading="lazy"></div><figcaption>Target density</figcaption></figure>
+        <figure><div class="fig"><img src="static/img/exp1_achieved.png" alt="Achieved trajectory occupancy" loading="lazy"></div><figcaption>Achieved occupancy, $K=300$ cycles</figcaption></figure>
+        <figure><div class="fig"><img src="static/img/exp1_map.png" alt="Learned transport map with displacement arrows" loading="lazy"></div><figcaption>Learned transport map</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="exp">
+      <div class="exp-head">
+        <p><b>Experiment 2 · demand-proportional allocation.</b> On a binary 3:1 target, time is split 75/25 as asked.</p>
+        <div class="kpis"><div><div class="stat">0.2 pp</div><div class="statlab">allocation error (time-warping: 2.0 pp)</div></div><div><div class="stat">10×</div><div class="statlab">tighter allocation</div></div></div>
+      </div>
+      <div class="grid2">
+        <figure><div class="fig"><img src="static/img/exp2_target.png" alt="Binary 3:1 target density" loading="lazy"></div><figcaption>Target: 75% / 25%</figcaption></figure>
+        <figure><div class="fig"><img src="static/img/exp2_achieved.png" alt="Achieved density on binary target" loading="lazy"></div><figcaption>Achieved</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="exp">
+      <div class="exp-head">
+        <p><b>Experiment 3 · constraints as loss terms.</b> Each penalty buys its constraint at a visible cost in coverage, a Pareto frontier over $(\lambda_{\rm nfz},\lambda_{\rm acc})$.</p>
+        <div class="kpis"><div><div class="stat">7×</div><div class="statlab">fewer no-fly violations</div></div><div><div class="stat">0.93×</div><div class="statlab">acceleration vs. latent path</div></div></div>
+      </div>
+      <div class="grid3 trio">
+        <figure><div class="fig"><img src="static/img/exp3_unc.png" alt="Unconstrained map samples near the no-fly disc" loading="lazy"></div><figcaption><b>No penalty</b>$\rho$ 0.89 · NFZ 0.7% · acc 1.77×</figcaption></figure>
+        <figure><div class="fig"><img src="static/img/exp3_nfz.png" alt="Map samples avoiding the no-fly disc" loading="lazy"></div><figcaption><b>+ no-fly penalty</b>$\rho$ 0.76 · NFZ 0.1% · acc 1.43×</figcaption></figure>
+        <figure><div class="fig"><img src="static/img/exp3_nfz_acc.png" alt="Map samples with no-fly and acceleration penalties" loading="lazy"></div><figcaption><b>+ no-fly + acceleration</b>$\rho$ 0.66 · NFZ 0.8% · acc 0.93×</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="exp">
+      <div class="grid2" style="align-items:center">
+        <figure><div class="fig"><img src="static/img/convergence.png" alt="Log-log RMSE versus number of cycles K" loading="lazy"></div><figcaption>Coverage RMSE vs. cycles $K$: slope $-0.48$ (theory: $-0.50$).</figcaption></figure>
+        <div>
+          <h3>The theory envelopes hold in practice</h3>
+          <p>The Hoeffding prediction $\sigma/\sqrt K\approx0.085$ at $K=300$ envelopes the observed residual of about $0.05$. The Experiment 2 acceleration ratio $0.71\times$ sits inside the energy envelope, and the plug-in floor $e^{\hat L_v}\varepsilon_v$ envelopes the measured $\hat W_2$.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Real data: UAV coverage over Milano</h2>
+    <p class="narrow">Demand from the Milano mobile-traffic dataset, two no-fly configurations (one disc, 1D; four discs, MD), six baselines and six variants of our method that differ only in the penalty term. Mean over 3 seeds.</p>
+
+    <div class="grid2" style="align-items:center;margin-bottom:26px">
+      <figure><div class="fig"><img src="static/img/milano_traj.png" alt="OT-CFM plus NFZ trajectories over the Milano demand heatmap, routing around the no-fly disc" loading="lazy"></div><figcaption>OT-CFM +NFZ over the Milano demand map; dashed: no-fly disc.</figcaption></figure>
+      <div>
+        <div class="kpis" style="flex-direction:column;gap:18px">
+          <div><div class="stat">0.865 / 0.911</div><div class="statlab">highest coverage $\rho$ (1D / MD), OT-CFM +NFZ</div></div>
+          <div><div class="stat">~200× / 8×</div><div class="statlab">less time in no-fly zones than unconstrained OT-CFM (0.011% / 0.189%)</div></div>
+          <div><div class="stat">2.5×</div><div class="statlab">lower fleet coverage error from 1 → 20 agents, same map, no retraining</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th></th><th colspan="2">coverage $\rho$ ↑</th><th colspan="2">mean power $\bar P$ (W) ↓</th><th colspan="2">NFZ time (%) ↓</th></tr>
+          <tr><th>Method</th><th>1D</th><th>MD</th><th>1D</th><th>MD</th><th>1D</th><th>MD</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>TOES<sup>†</sup></td><td>0.286</td><td>0.265</td><td>160</td><td>160</td><td>1.44</td><td>0</td></tr>
+          <tr><td>Time-warp</td><td>0.690</td><td>0.862</td><td>532</td><td>555</td><td>9.11</td><td>1.03</td></tr>
+          <tr><td>Static OT</td><td>0.575</td><td>0.570</td><td>1.0·10⁴</td><td>1.05·10⁴</td><td>3.25</td><td>4.20</td></tr>
+          <tr><td>SAC</td><td>0.395</td><td>0.228</td><td>2.55·10⁴</td><td>1.98·10⁴</td><td>5.23</td><td>35.0</td></tr>
+          <tr><td>FMEC-Stein<sup>†</sup></td><td>−0.119</td><td>−0.094</td><td>164</td><td>164</td><td>0</td><td>0</td></tr>
+          <tr><td>FMEC-Sinkhorn<sup>†</sup></td><td>−0.080</td><td>−0.065</td><td>166</td><td>166</td><td>0</td><td>0</td></tr>
+          <tr class="ours sep"><td>OT-CFM</td><td>0.839</td><td>0.908</td><td>2.12·10³</td><td>2.38·10³</td><td>2.27</td><td>1.56</td></tr>
+          <tr class="ours"><td>OT-CFM +NFZ</td><td class="best">0.865</td><td class="best">0.911</td><td>2.23·10³</td><td>2.24·10³</td><td class="best">0.011</td><td class="best">0.189</td></tr>
+          <tr class="ours"><td>OT-CFM +E</td><td>0.646</td><td>0.737</td><td class="best">510</td><td class="best">514</td><td>5.98</td><td>13.2</td></tr>
+          <tr class="ours"><td>OT-CFM +A</td><td>0.410</td><td>0.430</td><td>1.02·10³</td><td>1.04·10³</td><td>5.10</td><td>16.4</td></tr>
+          <tr class="ours"><td>OT-CFM +NFZ+E</td><td>0.572</td><td>0.230</td><td>819</td><td>1.68·10³</td><td>0.011</td><td>11.9</td></tr>
+          <tr class="ours"><td>OT-CFM +NEA<sup>‡</sup></td><td>0.104</td><td>0.188</td><td>645</td><td>457</td><td>0.102</td><td>0.032</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Bold: best per column among coverage-competitive methods ($\rho\ge0.5$). <sup>†</sup>Low power and zero NFZ time occur together with degenerate coverage ($\rho\le0.29$), so they should not be read as energy efficiency or constraint satisfaction. <sup>‡</sup>Low violation at degraded coverage. Standard deviations and the full metric set are in the paper (Table 1 and appendix).</p>
+
+    <div class="grid2" style="margin-top:28px">
+      <figure><div class="fig"><img src="static/img/pareto_1d.png" alt="Coverage versus energy budget, single no-fly disc" loading="lazy"></div><figcaption>Coverage–energy Pareto, single disc.</figcaption></figure>
+      <figure><div class="fig"><img src="static/img/pareto_md.png" alt="Coverage versus energy budget, four no-fly discs" loading="lazy"></div><figcaption>Coverage–energy Pareto, four discs. The OT-CFM family traces the front above the baselines.</figcaption></figure>
+    </div>
+    <p class="pull">Training is paid once. Every additional trajectory or agent costs a single forward pass through $v_\theta$.</p>
+  </div>
+</section>
+
+<section id="bibtex">
+  <div class="wrap narrow">
+    <div class="bibhead"><h2 style="margin:0">BibTeX</h2><button class="copy" id="copybib">Copy</button></div>
+<pre id="bib">@inproceedings{aghazadeh2026ergodic,
+  title     = {Ergodic Trajectory Design by Learned Pushforward Maps:
+               Provable Coverage via Conditional Flow Matching},
+  author    = {Aghazadeh, Ehsan and Malekzadeh, Masoud and
+               Ghasemi, Ahmad and Pishro-Nik, Hossein},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2026}
+}</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">University of Massachusetts Amherst · NeurIPS 2026 · <a href="https://github.com/EhsanAghazadeh/uav_ot_cfm">Code on GitHub</a></div>
+</footer>
+
+<script>
+(function(){
+  // ---- colour map (viridis, 9 stops) ----
+  const STOPS=[[68,1,84],[71,44,122],[59,81,139],[44,113,142],[33,144,141],[39,173,129],[92,200,99],[170,220,50],[253,231,37]];
+  const LUT=new Uint8ClampedArray(256*3);
+  for(let i=0;i<256;i++){const t=i/255*(STOPS.length-1),k=Math.min(Math.floor(t),STOPS.length-2),f=t-k;
+    for(let c=0;c<3;c++)LUT[i*3+c]=STOPS[k][c]+(STOPS[k+1][c]-STOPS[k][c])*f;}
+
+  const flow=document.getElementById('flow'), tgt=document.getElementById('target');
+  const fctx=flow.getContext('2d');
+  const range=document.getElementById('srange'), sval=document.getElementById('sval'), scap=document.getElementById('scap');
+  const playbtn=document.getElementById('playbtn'), playicon=document.getElementById('playicon');
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cache={}; let cur=null, s=0, playing=!reduce, dir=1, hold=0, last=0;
+
+  function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=src;});}
+  function gray(im,w,h){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0);
+    const d=x.getImageData(0,0,w,h).data,o=new Uint8Array(w*h);for(let i=0;i<w*h;i++)o[i]=d[i*4];return o;}
+
+  async function load(name){
+    if(cache[name])return cache[name];
+    const meta=await (await fetch(`static/flow/${name}_meta.json`)).json();
+    const sheet=await loadImg(`static/flow/${name}_frames.png`);
+    const b=meta.bins, all=gray(sheet,sheet.width,sheet.height), frames=[];
+    for(let i=0;i<meta.s.length;i++){const r=Math.floor(i/meta.cols),c=i%meta.cols,f=new Uint8Array(b*b);
+      for(let y=0;y<b;y++)f.set(all.subarray((r*b+y)*sheet.width+c*b,(r*b+y)*sheet.width+c*b+b),y*b);frames.push(f);}
+    const m={meta,frames,off:document.createElement('canvas')};
+    m.off.width=m.off.height=b; return cache[name]=m;
+  }
+
+  function paint(ctx,canvas,m,vals){
+    const b=m.meta.bins,ox=m.off.getContext('2d'),img=ox.createImageData(b,b);
+    for(let i=0;i<b*b;i++){const v=vals[i]|0;img.data[i*4]=LUT[v*3];img.data[i*4+1]=LUT[v*3+1];img.data[i*4+2]=LUT[v*3+2];img.data[i*4+3]=255;}
+    ox.putImageData(img,0,0);
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(m.off,0,0,canvas.width,canvas.height);
+    if(m.meta.nfz_center){const W=canvas.width,[cx,cy]=m.meta.nfz_center,r=m.meta.nfz_radius;
+      ctx.save();ctx.setLineDash([8,6]);ctx.lineWidth=2.5;ctx.strokeStyle='#ff4d5e';ctx.beginPath();
+      ctx.arc((cx+1)/2*W,(1-(cy+1)/2)*W,r/2*W,0,Math.PI*2);ctx.stroke();ctx.restore();}
+  }
+
+  const buf={};
+  function drawFlow(){
+    if(!cur)return; const n=cur.frames.length,t=s*(n-1),k=Math.min(Math.floor(t),n-2),f=t-k;
+    const A=cur.frames[k],B=cur.frames[k+1],L=A.length; if(!buf[L])buf[L]=new Uint8Array(L); const o=buf[L];
+    for(let i=0;i<L;i++)o[i]=A[i]+(B[i]-A[i])*f;
+    paint(fctx,flow,cur,o);
+    const txt='s = '+s.toFixed(2); sval.textContent=txt; scap.textContent=txt; range.value=Math.round(s*1000);
+  }
+
+  function setIcon(){playicon.innerHTML=playing?'<rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/>':'<path d="M4 2l10 6-10 6z"/>';
+    playbtn.setAttribute('aria-label',playing?'Pause':'Play');}
+
+  function tick(ts){
+    const dt=last?Math.min((ts-last)/1000,0.1):0; last=ts;
+    if(playing&&cur){
+      if(hold>0){hold-=dt;}
+      else{s+=dir*dt/(dir>0?4.0:2.2); if(s>=1){s=1;dir=-1;hold=1.6;} else if(s<=0){s=0;dir=1;hold=0.8;} drawFlow();}
+    }
+    requestAnimationFrame(tick);
+  }
+
+  async function select(name){
+    document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.model===name));
+    const ts='static/flow/target_'+name+'.png'; tgt.src=(window.__ASSETS&&window.__ASSETS[ts])||ts;
+    document.getElementById('tcap').textContent=name==='otcfm_nfz'?'Target: Milano demand, zero inside the no-fly zone (mass redistributed)':'Target: Milano demand density';
+    try{cur=await load(name);}catch(e){document.getElementById('player').classList.add('noflow');return;}
+    drawFlow();
+  }
+
+  range.addEventListener('input',()=>{s=range.value/1000;playing=false;setIcon();drawFlow();});
+  playbtn.addEventListener('click',()=>{playing=!playing;if(playing&&s>=1){s=0;dir=1;}hold=0;setIcon();});
+  document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>select(b.dataset.model)));
+  setIcon(); select('otcfm'); requestAnimationFrame(tick);
+
+  document.getElementById('copybib').addEventListener('click',e=>{
+    const t=document.getElementById('bib').textContent;
+    (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy',1500);}).catch(()=>{});
+  });
+  const pl=document.getElementById('paper-link');
+  if(pl.getAttribute('href')==='#')pl.addEventListener('click',e=>e.preventDefault());
+})();
+</script>
+</body>
+</html>
