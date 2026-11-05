@@ -11,8 +11,8 @@ Code: https://github.com/EhsanAghazadeh/uav_ot_cfm
 3. Settings → Pages → Source: *Deploy from a branch*, Branch: `main`, folder `/ (root)`.
 
 ## Update links
-In `index.html`, replace the `href="#"` on the **Paper** button (`id="paper-link"`)
-with the arXiv / NeurIPS proceedings URL and delete the `(coming soon)` span.
+The **Paper** button (`id="paper-link"` in `index.html`) points to arXiv (https://arxiv.org/abs/2605.13063).
+Swap in the NeurIPS proceedings URL once it is available.
 
 ## Animation assets
 `static/flow/*_frames.png` (grayscale sprite sheet, 61 frames, s = 0 → 1),
