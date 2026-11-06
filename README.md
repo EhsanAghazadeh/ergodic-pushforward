@@ -1,4 +1,4 @@
-# Project page: Ergodic Trajectory Design by Learned Pushforward Maps (NeurIPS 2026)
+# Project page: Ergodic Trajectory Design via Conditional Flow Matching (NeurIPS 2026)
 
 Static project page served with GitHub Pages at
 https://ehsanaghazadeh.github.io/ergodic-pushforward/
